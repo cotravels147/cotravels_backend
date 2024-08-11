@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 import datetime
-
-Base = declarative_base()
+from app.models.base import Base
 
 class DirectChat(Base):
     __tablename__ = 'direct_chats'

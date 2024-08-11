@@ -1,7 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from app.models.base import Base
 
 class GroupUserRole(Base):
     __tablename__ = 'group_user_roles'
