@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -5,9 +7,16 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# Load environment variables from .env file
+load_dotenv()
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Construct the database URL using environment variables and URL object
+database_url = f"mysql+mysqldb://{os.getenv("MYSQL_USER")}:{os.getenv("MYSQL_PASSWORD")}@{os.getenv("MYSQL_HOST")}/{os.getenv("MYSQL_DB")}"
+config.set_main_option("sqlalchemy.url", str(database_url))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -18,7 +27,33 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+from app.models import (
+    user, role, permission, role_permission,
+    direct_chat, group_chat, group_user_role,
+    token_blacklist, post
+)
+
+# Combine all SQLAlchemy model metadata
+target_metadata = [
+    user.Base.metadata,
+    role.Base.metadata,
+    permission.Base.metadata,
+    role_permission.Base.metadata,
+    direct_chat.Base.metadata,
+    group_chat.Base.metadata,
+    group_user_role.Base.metadata,
+    token_blacklist.Base.metadata,
+    post.Base.metadata,
+]
+
+# # Setup to collect metadata from all SQLAlchemy models
+# def get_target_metadata():
+#     """Function to collect all metadata from individual SQLAlchemy model files."""
+#     metadata = []
+#     for meta in target_metadata:
+#         metadata.append(meta)
+#     return metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
