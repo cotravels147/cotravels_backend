@@ -7,3 +7,4 @@ from app.models.group_chat import GroupChat
 from app.models.group_user_role import GroupUserRole
 from app.models.post import Post
 from app.models.token_blacklist import TokenBlacklist
+from app.models.jwt_session import JwtSession
