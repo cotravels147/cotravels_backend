@@ -8,6 +8,7 @@ MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
 MYSQL_DB = os.getenv("MYSQL_DB")
 
 DATABASE_URL = f"mysql+mysqldb://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}"
+print(DATABASE_URL)
 
 engine = create_engine(DATABASE_URL)
 

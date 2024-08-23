@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, ForeignKey, DateTime, String
 import datetime
 from app.models.base import Base
 
-class JwtSession(Base):
-    __tablename__ = 'jwt_sessions'
+class RefreshToken(Base):
+    __tablename__ = 'refresh_tokens'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)

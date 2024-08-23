@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.orm import deferred
 import datetime
 from app.models.base import Base
 
@@ -9,7 +10,7 @@ class User(Base):
     name = Column(String(80), nullable=False)
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(120), unique=True, nullable=False)
-    password = Column(String(255), nullable=False)
-    profile_picture = Column(String(255))
+    password = deferred(Column(String(255), nullable=False))
+    profile_picture = deferred(Column(String(255)))
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)

@@ -8,3 +8,4 @@ from app.models.group_user_role import GroupUserRole
 from app.models.post import Post
 from app.models.token_blacklist import TokenBlacklist
 from app.models.jwt_session import JwtSession
+from app.models.refresh_token import RefreshToken
