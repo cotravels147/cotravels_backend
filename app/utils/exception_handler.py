@@ -20,12 +20,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         message = error["msg"].lower()
         if field_name == "body":
             detailed_errors.append({
-                "field": "Request body",
-                "message": "Request body required"
+                "required": "Request body",
+                "message": "Please send required data in request body"
             })
         else:
             detailed_errors.append({
-                "field": field_name,
+                "required": field_name,
                 "message": f"{field_name.capitalize()} {message}",
             })
 

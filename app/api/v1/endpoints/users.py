@@ -66,9 +66,11 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db), 
     return {"message": "Logged out successfully"}
 
 @router.get("/refresh-token")
-def refresh_token(response: Response, token_request: TokenRequest, refresh_token: str = Cookie(None), db: Session = Depends(get_db)):
+def refresh_token(response: Response, request: Request, refresh_token: str = Cookie(None), db: Session = Depends(get_db)):
     # Verify the refresh token
-    access_token = token_request.access_token
+    access_token = request.headers.get('authorization')
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
     if refresh_token:
         payload = jwt_decode(access_token, {"verify_exp": False})
         user_id = verify_refresh_token(refresh_token, payload.get('uid'), db)
