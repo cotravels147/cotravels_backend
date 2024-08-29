@@ -13,14 +13,14 @@ def jwt_encode(data : dict):
     encoded_data = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_data
 
-def jwt_decode(token : str):
+def jwt_decode(token: str, options: dict | None = None):
     try:
-        decoded_data = jwt.decode(token, SECRET_KEY, algorithm=ALGORITHM)
+        decoded_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options=options)
         return decoded_data
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization token",
+            detail=str(e),
         )
 
 def verify_access_token(request: Request, db: Session = Depends(get_db)) -> int:
@@ -34,7 +34,7 @@ def verify_access_token(request: Request, db: Session = Depends(get_db)) -> int:
 
     payload = jwt_decode(token)
     user_id = payload.get("uid")
-    exp = payload.get("exp")
+    exp = payload.get("exp") 
 
     if user_id is None or exp is None:
         raise HTTPException(
@@ -50,17 +50,10 @@ def verify_access_token(request: Request, db: Session = Depends(get_db)) -> int:
             detail="Session logged out! Please login again.",
         )
 
-    # Check if the token has expired
-    if datetime.utcnow() > datetime.utcfromtimestamp(exp):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired! Please login again.",
-        )
-
     return user_id
     
 def verify_refresh_token(token: str, user_id: int, db: Session):
-    token_data = db.query(RefreshToken).filter(token == token, user_id == user_id).first()
+    token_data = db.query(RefreshToken).filter(RefreshToken.token == token, RefreshToken.user_id == user_id).first()
     if token_data and token_data.expires_at > datetime.utcnow():
         return token_data.user_id
 

@@ -17,5 +17,8 @@ uvicorn app.main:app --reload
 alembic -c alembic.ini revision --autogenerate -m "YOUR MESSAGE"
 alembic -c alembic.ini upgrade head
 
+<!-- command to drop all tables using alembic for fresh data -->
+alembic downgrade base
+
 <!-- command to update requirements.txt with required versions of packages -->
 pip freeze > requirements.txt

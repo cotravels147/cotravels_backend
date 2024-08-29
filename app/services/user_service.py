@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Session, undefer
 from sqlalchemy import or_
+from sqlalchemy.dialects.mysql import insert
 from fastapi import HTTPException, status
 from app.models import User, JwtSession, RefreshToken, TokenBlacklist
 from app.requests.signup_request import SignupRequest
@@ -134,10 +135,10 @@ def logout_all_sessions(user_id: int, db: Session):
     # Blacklist all JWTs for the user
     jwt_sessions = db.query(JwtSession).filter(JwtSession.user_id == user_id).all()
     for session in jwt_sessions:
-        blacklist_entry = TokenBlacklist(token=session.token, blacklisted_at=datetime.utcnow())
-        db.add(blacklist_entry)
+        # blacklist_entry = TokenBlacklist(token=session.token, blacklisted_at=datetime.utcnow())
+        blacklist_entry = insert(TokenBlacklist).values(token=session.token, blacklisted_at=datetime.utcnow()).prefix_with('IGNORE')
+        db.execute(blacklist_entry)
     
     # Delete all refresh tokens for the user
     db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
-    
     db.commit()
