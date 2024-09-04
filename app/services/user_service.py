@@ -64,9 +64,15 @@ def store_refresh_token(db: Session, user_id: int, refresh_token: str):
     db.add(refresh_token_entry)
     db.commit()
 
-def get_user_by_id(db: Session, user_id: int):
+def get_user_by_id(db: Session, user_id: int, columnToUndefer: str = None):
     """Retrieve a user by ID."""
-    return db.query(User).filter(User.id == user_id).first()
+    query = db.query(User)
+    
+    if columnToUndefer and hasattr(User, columnToUndefer):
+        columnToUndefer = getattr(User, columnToUndefer)
+        query = query.options(undefer(columnToUndefer))
+    
+    return query.filter(User.id == user_id).first()
 
 def update_user(db: Session, user_id: int, user_update: dict):
     """Update an existing user."""

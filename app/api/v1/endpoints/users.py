@@ -84,6 +84,11 @@ def refresh_token(response: Response, request: Request, refresh_token: str = Coo
     
     raise HTTPException(status_code=401, detail="Invalid or expired refresh token") 
 
+@router.get("/user-profile")
+def get_user_profile(db: Session = Depends(get_db), user_id: int = Depends(verify_access_token)):
+    user = get_user_by_id(db, user_id, 'profile_picture')
+    return user
+
 @router.post("/upload-profile-picture")
 async def upload_profile_picture(file: UploadFile = File(...), user_id: int = Depends(verify_access_token), db: Session = Depends(get_db)):    
     # Validate the file type

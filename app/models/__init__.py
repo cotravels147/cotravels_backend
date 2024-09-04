@@ -9,3 +9,12 @@ from app.models.post import Post
 from app.models.token_blacklist import TokenBlacklist
 from app.models.jwt_session import JwtSession
 from app.models.refresh_token import RefreshToken
+from app.models.friend_request import FriendRequest
+from app.models.friend import Friend
+from app.models.group_chat_itinerary import GroupChatItinerary
+from app.models.hotel_booking import HotelBooking
+from app.models.itinerary_activity import ItineraryActivity
+from app.models.itinerary import Itinerary
+from app.models.travel_plan_destination import TravelPlanDestination
+from app.models.travel_plan import TravelPlan
+from app.models.travel_tip import TravelTip
