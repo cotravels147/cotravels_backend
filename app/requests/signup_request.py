@@ -1,7 +1,8 @@
 from pydantic import BaseModel, EmailStr, validator, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import date
 import re
+import json
 
 class SignupRequest(BaseModel):
     username: str
@@ -15,8 +16,8 @@ class SignupRequest(BaseModel):
     state: str
     country: str
     bio: Optional[str] = None
-    travel_preferences: Optional[str] = None
-    languages_spoken: Optional[str] = None
+    travel_preferences: Optional[List[str]] = None
+    languages_spoken: Optional[List[str]] = None
 
     @validator('username')
     def validate_username(cls, v):
@@ -43,7 +44,7 @@ class SignupRequest(BaseModel):
 
     @validator('name')
     def validate_name(cls, v):
-        if not re.match("^[a-zA-Z\s]+$", v):
+        if not re.match(r"^[a-zA-Z\s]+$", v):
             raise ValueError('Name must contain only letters and spaces')
         if len(v) < 2 or len(v) > 50:
             raise ValueError('Name must be between 2 and 50 characters long')
@@ -53,7 +54,7 @@ class SignupRequest(BaseModel):
     def validate_gender(cls, v):
         valid_genders = ['male', 'female', 'other']
         if v.lower() not in valid_genders:
-            raise ValueError('Invalid gender. Choose from: male, female, other, prefer not to say')
+            raise ValueError('Invalid gender. Choose from: male, female, other')
         return v.lower()
 
     @validator('phone_number')
@@ -72,4 +73,31 @@ class SignupRequest(BaseModel):
     def validate_bio(cls, v):
         if v and len(v) > 500:
             raise ValueError('Bio must not exceed 500 characters')
+        return v
+    
+    @validator('travel_preferences')
+    def validate_travel_preferences(cls, v):
+        if v:
+            if len(v) > 10:
+                raise ValueError('You can specify up to 10 travel preferences')
+            for pref in v:
+                if len(pref) > 50:
+                    raise ValueError('Each travel preference must not exceed 50 characters')
+        return json.dumps(v) if v else None
+
+    @validator('languages_spoken')
+    def validate_languages_spoken(cls, v):
+        if v:
+            if len(v) > 10:
+                raise ValueError('You can specify up to 10 languages')
+            for lang in v:
+                if len(lang) > 50:
+                    raise ValueError('Each language must not exceed 50 characters')
+        return json.dumps(v) if v else None
+    
+    @validator('country', 'state', 'city')
+    def blank_string_as_none(cls, v):
+        # Convert blank strings to None
+        if v == "":
+            raise ValueError('Value of this field is required')
         return v

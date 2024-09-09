@@ -3,12 +3,15 @@
 from sqlalchemy.orm import Session, undefer
 from sqlalchemy import or_
 from sqlalchemy.dialects.mysql import insert
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from app.models import User, JwtSession, RefreshToken, TokenBlacklist
 from app.requests.signup_request import SignupRequest
 from app.utils.helper import jwt_encode
 from datetime import datetime, timedelta
+from uuid import uuid4
 import bcrypt
+import shutil
+import os
 import secrets
 import uuid
 
@@ -148,3 +151,40 @@ def logout_all_sessions(user_id: int, db: Session):
     # Delete all refresh tokens for the user
     db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
     db.commit()
+
+def change_user_password(db: Session, user_id: int, old_password: str, new_password: str):
+    user = get_user_by_id(db, user_id, 'password')
+    if not user or not verify_password(old_password, user.password):
+        raise HTTPException(status_code=400, detail="Invalid old password")
+    
+    hashed_password = get_password_hash(new_password)
+    user.password = hashed_password
+    db.commit()
+
+async def upload_user_profile_picture(file: UploadFile, user_id: int, db: Session):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
+    
+    profile_picture_dir = "static/profile_pictures"
+    os.makedirs(profile_picture_dir, exist_ok=True)
+    
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.profile_picture:
+        existing_file_path = os.path.join(profile_picture_dir, user.profile_picture)
+        if os.path.exists(existing_file_path):
+            os.remove(existing_file_path)
+
+    file_extension = file.filename.split(".")[-1]
+    file_name = f"{uuid4()}_{user_id}.{file_extension}"
+    profile_picture_path = f"{profile_picture_dir}/{file_name}"
+
+    with open(profile_picture_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    user.profile_picture = file_name
+    db.commit()
+    
+    return file_name

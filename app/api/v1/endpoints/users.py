@@ -6,8 +6,8 @@ from app.services.user_service import *
 from app.core.mysql_connection import get_db
 from app.requests.signup_request import SignupRequest
 from app.requests.signin_request import SigninRequest
-import shutil
-from uuid import uuid4
+from app.requests.update_user_request import UpdateUserRequest
+from app.requests.change_password_request import ChangePasswordRequest
 
 router = APIRouter()
 
@@ -29,7 +29,7 @@ def signup(signup_request: SignupRequest, db: Session = Depends(get_db)):
     
     # Create new user
     user = create_user(db, signup_request)
-    return {"message": "Registration successful", "user": user}
+    return {"message": "Registration successful"}
 
 
 @router.post("/signin")
@@ -89,37 +89,22 @@ def get_user_profile(db: Session = Depends(get_db), user_id: int = Depends(verif
     user = get_user_by_id(db, user_id, 'profile_picture')
     return user
 
+@router.put("/update-profile")
+def update_user_profile(update_request: UpdateUserRequest, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    updated_user = update_user(db, current_user_id, update_request.dict(exclude_unset=True))
+    return {"message": "Profile updated successfully", "user": updated_user}
+
 @router.post("/upload-profile-picture")
-async def upload_profile_picture(file: UploadFile = File(...), user_id: int = Depends(verify_access_token), db: Session = Depends(get_db)):    
-    # Validate the file type
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
-    
-    # Define the path to save the profile picture
-    profile_picture_dir = "static/profile_pictures"
-    os.makedirs(profile_picture_dir, exist_ok=True)  # Create directory if it doesn't exist   
-    
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+async def upload_profile_picture(file: UploadFile = File(...), current_user_id: int = Depends(verify_access_token), db: Session = Depends(get_db)):    
+    profile_picture_url = await upload_user_profile_picture(file, current_user_id, db)
+    return JSONResponse(content={"message": "Profile picture uploaded successfully.", "profile_picture_url": profile_picture_url})
 
-    # Delete the existing profile picture if it exists
-    if user.profile_picture:
-        existing_file_path = os.path.join(profile_picture_dir, user.profile_picture)
-        print(existing_file_path)
-        if os.path.exists(existing_file_path):
-            print('here')
-            os.remove(existing_file_path)
+@router.post("/change-password")
+def change_password(change_password_request: ChangePasswordRequest, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    change_user_password(db, current_user_id, change_password_request.old_password, change_password_request.new_password)
+    return {"message": "Password changed successfully"}
 
-    file_extension = file.filename.split(".")[-1]
-    file_name = f"{uuid4()}_{user_id}.{file_extension}"
-    profile_picture_path = f"{profile_picture_dir}/{file_name}"
-
-    # Save the file
-    with open(profile_picture_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    user.profile_picture = file_name
-    db.commit()
-    
-    return JSONResponse(content={"message": "Profile picture uploaded successfully.", "profile_picture_url": file_name})
+@router.delete("/delete-account")
+def delete_account(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    delete_user(db, current_user_id)
+    return {"message": "Account deleted successfully"}
