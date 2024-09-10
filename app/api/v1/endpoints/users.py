@@ -13,28 +13,14 @@ router = APIRouter()
 
 @router.post("/signup")
 def signup(signup_request: SignupRequest, db: Session = Depends(get_db)):
-    # Check if user already exists
-    existing_user = get_user_by_email_or_username(db, signup_request.email, signup_request.username)
-    if existing_user:
-        if existing_user.email == signup_request.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
-        elif existing_user.username == signup_request.username:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already exists"
-            )
-    
-    # Create new user
-    user = create_user(db, signup_request)
-    return {"message": "Registration successful"}
+    # Create or restore user
+    user = create_or_restore_user(db, signup_request)
+    return {"message": "Registration successful", "user": user}
 
 
 @router.post("/signin")
 def signin(signin_request: SigninRequest, db: Session = Depends(get_db)):
-    user = get_user_by_email_or_username(db, signin_request.username, signin_request.username, 'password')
+    user = authenticate_user(db, signin_request)
     if not user or not verify_password(signin_request.password, user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 

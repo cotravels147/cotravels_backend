@@ -6,6 +6,7 @@ from sqlalchemy.dialects.mysql import insert
 from fastapi import HTTPException, status, UploadFile
 from app.models import User, JwtSession, RefreshToken, TokenBlacklist
 from app.requests.signup_request import SignupRequest
+from app.requests.signin_request import SigninRequest
 from app.utils.helper import jwt_encode
 from datetime import datetime, timedelta
 from uuid import uuid4
@@ -30,21 +31,57 @@ def get_user_by_email_or_username(db: Session, email: str = None, username: str 
         or_(User.username == username, User.email == email)
     ).first()
 
-def create_user(db: Session, user_data: SignupRequest) -> SignupRequest:
-    """Create a new user in the database."""
-
-    # Create a new user instance from the user_data
-    user_data = user_data.model_dump()
-    user = User(**user_data)
-
-    # Hash the user's password
-    hashed_password = get_password_hash(user.password)
-    user.password = hashed_password
+def authenticate_user(db: Session, signin_request: SigninRequest):
+    user = get_user_by_email_or_username(db, signin_request.username, signin_request.username, 'password')
     
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
+    if user.is_deleted:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="This account has been deleted")
+    
+    if not verify_password(signin_request.password, user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
     return user
+
+def create_or_restore_user(db: Session, user_data: SignupRequest) -> User:
+    """Create a new user or restore a deleted user in the database."""
+    existing_user = get_user_by_email_or_username(db, user_data.email, user_data.username)
+
+    if existing_user:
+        if existing_user.is_deleted:
+            # Restore the deleted user
+            existing_user.is_deleted = False
+            existing_user.name = user_data.name
+            existing_user.password = get_password_hash(user_data.password)
+            existing_user.date_of_birth = user_data.date_of_birth
+            existing_user.gender = user_data.gender
+            existing_user.phone_number = user_data.phone_number
+            existing_user.city = user_data.city
+            existing_user.state = user_data.state
+            existing_user.country = user_data.country
+            existing_user.bio = user_data.bio
+            existing_user.travel_preferences = user_data.travel_preferences
+            existing_user.languages_spoken = user_data.languages_spoken
+            existing_user.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(existing_user)
+            return existing_user
+        else:
+            # User exists and is not deleted
+            if existing_user.email == user_data.email:
+                raise HTTPException(status_code=400, detail="Email already registered")
+            else:
+                raise HTTPException(status_code=400, detail="Username already exists")
+
+    # Create a new user
+    new_user = User(**user_data.dict(exclude={'password'}))
+    new_user.password = get_password_hash(user_data.password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
 
 def store_jwt_session(db: Session, user_id: int, access_token: str, expiry: datetime):
     jwt_session = JwtSession(
@@ -93,9 +130,12 @@ def delete_user(db: Session, user_id: int):
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    db.delete(user)
+    
+    user.is_deleted = True
     db.commit()
-    return {"message": "User deleted successfully"}
+    
+    # remove all logged in sessions
+    logout_all_sessions(user_id, db)
 
 # Create access token
 def create_access_token(data: dict, expires_delta: timedelta | None = None):

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Enum, Text
+from sqlalchemy import Column, Integer, String, Date, DateTime, Enum, Text, Boolean
 from sqlalchemy.orm import relationship, deferred
 import datetime
 from app.models.base import Base
@@ -24,6 +24,7 @@ class User(Base):
     bio = Column(Text)
     travel_preferences = Column(Text)
     languages_spoken = Column(Text)
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
     posts = relationship("Post", back_populates="user")
     travel_plans = relationship("TravelPlan", back_populates="user")
