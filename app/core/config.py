@@ -2,14 +2,15 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Your Project Name"
+    PROJECT_NAME: str = "CoTravels"
     API_STR: str = "/api"
     
     # CORS settings
     BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:8080",
-        "https://yourdomain.com",
+        "https://cotravels.in",
     ]
 
     # MySQL settings
