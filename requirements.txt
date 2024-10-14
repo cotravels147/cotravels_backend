@@ -26,6 +26,7 @@ mysqlclient==2.2.4
 psycopg2-binary==2.9.9
 pyasn1==0.6.0
 pydantic==2.8.2
+pydantic-settings==2.5.1
 pydantic_core==2.20.1
 Pygments==2.18.0
 pymongo==4.8.0

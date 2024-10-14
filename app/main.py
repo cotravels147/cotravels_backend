@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.exception_handler import register_exception_handlers
 from fastapi.staticfiles import StaticFiles
