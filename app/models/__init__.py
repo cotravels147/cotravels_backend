@@ -18,3 +18,4 @@ from app.models.itinerary import Itinerary
 from app.models.travel_plan_destination import TravelPlanDestination
 from app.models.travel_plan import TravelPlan
 from app.models.travel_tip import TravelTip
+from app.models.notification import Notification

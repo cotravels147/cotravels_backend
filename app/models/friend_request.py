@@ -7,7 +7,7 @@ from app.models.base import Base
 class FriendRequestStatus(enum.Enum):
     pending = "pending"
     accepted = "accepted"
-    declined = "declined"
+    rejected = "rejected"
     cancelled = "cancelled"
 
 class FriendRequest(Base):

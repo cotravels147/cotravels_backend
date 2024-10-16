@@ -1,7 +1,12 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Enum, Text, Boolean
+from sqlalchemy import Column, Integer, String, Date, DateTime, Enum, Text, Boolean, Table, ForeignKey
 from sqlalchemy.orm import relationship, deferred
 import datetime
 from app.models.base import Base
+
+blocked_users = Table('blocked_users', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
+    Column('blocked_user_id', Integer, ForeignKey('users.id'), primary_key=True)
+)
 
 class User(Base):
     __tablename__ = 'users'
@@ -25,7 +30,26 @@ class User(Base):
     travel_preferences = Column(Text)
     languages_spoken = Column(Text)
     is_deleted = Column(Boolean, default=False, nullable=False)
+    privacy_friends_list = Column(Enum('public', 'friends', 'private', name='privacy_enum'), default='public', nullable=False)
+    privacy_friend_requests = Column(Enum('everyone', 'friends_of_friends', 'none', name='privacy_requests_enum'), default='everyone', nullable=False)
 
+    sent_friend_requests = relationship("FriendRequest", foreign_keys="FriendRequest.sender_id", back_populates="sender")
+    received_friend_requests = relationship("FriendRequest", foreign_keys="FriendRequest.receiver_id", back_populates="receiver")
+    friends = relationship(
+        "User",
+        secondary="friend_requests",
+        primaryjoin="and_(User.id == FriendRequest.sender_id, FriendRequest.status == 'accepted')",
+        secondaryjoin="and_(User.id == FriendRequest.receiver_id, FriendRequest.status == 'accepted')",
+        viewonly=True
+    )
+    blocked_users = relationship(
+        "User",
+        secondary=blocked_users,
+        primaryjoin=(blocked_users.c.user_id == id),
+        secondaryjoin=(blocked_users.c.blocked_user_id == id),
+        backref="blocked_by"
+    )
+    notifications = relationship("Notification", back_populates="user")
     posts = relationship("Post", back_populates="user")
     travel_plans = relationship("TravelPlan", back_populates="user")
     travel_tips = relationship("TravelTip", back_populates="user")
