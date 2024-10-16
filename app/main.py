@@ -35,4 +35,17 @@ app.include_router(api_router, prefix=settings.API_STR)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to CoTravels"}
+    html_content = """
+    <html>
+        <head>
+            <title>Welcome</title>
+        </head>
+        <body>
+            <div style="margin-top:10vmin; margin-left:auto; margin-right:auto; width:50%;">
+                <h1 style="text-align:center;">Welcome to CoTravels!</h1>
+                <img style="display:block; margin-left:auto; margin-right:auto; width:60%;"src="/static/website_resources/logo-01.jpg">
+            </div>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
